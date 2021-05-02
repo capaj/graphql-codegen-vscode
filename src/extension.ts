@@ -5,6 +5,8 @@ import * as yaml from 'js-yaml'
 
 import * as fs from 'fs'
 import * as path from 'path'
+import multimatch from 'multimatch'
+import cloneDeep from 'lodash.clonedeep'
 import { YamlCliFlags } from '@graphql-codegen/cli'
 /**
  * Current workspace directory
@@ -61,6 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   let cachedCtx: graphqlCodegenCli.CodegenContext | null = null
+  let originalGenerates: object | null = null
 
   const getCodegenContextForVSCode = async (fileName?: string) => {
     if (cachedCtx) {
@@ -77,8 +80,24 @@ export function activate(context: vscode.ExtensionContext) {
 
       cachedCtx.cwd = currentDirectory()
       // @ts-expect-error
-      cachedCtx.config.schema = makePathsAbsolute(cachedCtx.config.schema)
+      const { config } = cachedCtx
+      if (config.schema) {
+        // typically on a config for a single codegen artefact
+        // @ts-expect-error
+        config.schema = makePathsAbsolute(cachedCtx.config.schema)
+      }
 
+      const generates = config.generates
+      if (generates && !config.schema) {
+        originalGenerates = cloneDeep(generates)
+
+        // typically on a config for a codegen with multiple artifacts
+        for (const codegenGenerateOutput of Object.keys(generates)) {
+          const codegenGenerate = generates[codegenGenerateOutput]
+
+          codegenGenerate.schema = makePathsAbsolute(codegenGenerate.schema)
+        }
+      }
       return cachedCtx
     } catch (err) {
       console.error(err)
@@ -95,8 +114,38 @@ export function activate(context: vscode.ExtensionContext) {
         document.fileName.endsWith('gql')
       ) {
         const ctx = await getCodegenContextForVSCode(document.fileName)
+
         // @ts-expect-error
-        ctx.config.documents = document.fileName
+
+        const generates = ctx.config.generates
+        // @ts-expect-error
+        if (ctx.config.schema) {
+          // @ts-expect-error
+          ctx.config.documents = document.fileName
+        } else {
+          for (const codegenGenerateOutput of Object.keys(generates)) {
+            const codegenGenerate = generates[codegenGenerateOutput]
+
+            const matches = multimatch(
+              document.fileName.replace(`${currentDirectory()}/`, ''),
+              // @ts-expect-error
+              originalGenerates[codegenGenerateOutput].documents
+            )
+            console.log(
+              '~ matches',
+              matches,
+              document.fileName.replace(currentDirectory(), ''),
+              codegenGenerate.documents
+            )
+            if (matches.length === 0) {
+              // this file does not match the glob. This will not generate so we can omit this
+              codegenGenerate.documents = []
+            } else {
+              codegenGenerate.documents = document.fileName
+            }
+          }
+        }
+
         await cli.generate(ctx)
         vscode.window.showInformationMessage(
           `codegen ${document.fileName} done!`
