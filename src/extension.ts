@@ -1,9 +1,6 @@
 import * as vscode from 'vscode'
 import * as graphqlCodegenCli from '@graphql-codegen/cli'
 
-import * as yaml from 'js-yaml'
-
-import * as fs from 'fs'
 import * as path from 'path'
 import multimatch from 'multimatch'
 import cloneDeep from 'lodash.clonedeep'
@@ -24,31 +21,6 @@ const makePathsAbsolute = (fsPath: string | string[]): any => {
   }
   return path.join(currentDirectory(), fsPath)
 }
-
-/**
- * Create config JSON from input config
- */
-
-// export const createContext = () => {
-//   const configFilePath = currentDirectory() + '/codegen.yml'
-//   const configFileContents = fs.readFileSync(configFilePath, 'utf8')
-
-//   // @ts-expect-error
-//   let context = new CodegenContext({ config: yaml.load(configFileContents) })
-//   //
-//   // config = modifyOutputFilePath(config);
-//   // config = modifySchemaAndDocumentsPath(config);
-//   context.cwd = currentDirectory()
-//   console.log(context.getConfig())
-//   const originalGetConfig = context.getConfig
-//   // @ts-expect-error
-//   context.getConfig = () => {
-//     const conf = originalGetConfig()
-//     conf.pluginLoader = makePluginLoader as any
-//     return conf
-//   }
-//   return context as CodegenContext
-// }
 
 export function activate(context: vscode.ExtensionContext) {
   let cli: typeof graphqlCodegenCli
