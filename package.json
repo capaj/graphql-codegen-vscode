@@ -1,6 +1,11 @@
 {
   "name": "graphql-codegen-vscode",
   "displayName": "graphql-codegen",
+  "publisher": "capaj",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/capaj/graphql-codegen-vscode.git"
+  },
   "description": "integrates graphql-codegen into vscode, running it every time your query/mutation is saved",
   "icon": "gql-codegen-cover.png",
   "version": "0.0.1",
