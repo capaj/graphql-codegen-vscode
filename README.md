@@ -1,6 +1,7 @@
 # graphql-codegen-vscode
 
 Generates @graphql-codegen as soon as you hit save on any `gql` or `graphql` file.
+Keep in mind it will only run when your node_modules contain `@graphql-codegen/cli` package.
 
 ### How is it different than VilvaAthibanPB.graphql-codegen
 
