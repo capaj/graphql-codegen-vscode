@@ -9,7 +9,7 @@ import { YamlCliFlags } from '@graphql-codegen/cli'
  * Current workspace directory
  */
 
-export const currentDirectory = () =>
+export const firstWorkspaceDirectory = () =>
   vscode.workspace.workspaceFolders![0].uri.fsPath
 
 const makePathsAbsolute = (fsPath: string | string[]): any => {
@@ -19,7 +19,7 @@ const makePathsAbsolute = (fsPath: string | string[]): any => {
   if (path.isAbsolute(fsPath)) {
     return fsPath
   }
-  return path.join(currentDirectory(), fsPath)
+  return path.join(firstWorkspaceDirectory(), fsPath)
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -27,7 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   try {
     cli = require(path.join(
-      currentDirectory(),
+      firstWorkspaceDirectory(),
       '/node_modules/@graphql-codegen/cli'
     ))
   } catch (err) {
@@ -41,20 +41,19 @@ export function activate(context: vscode.ExtensionContext) {
     if (cachedCtx) {
       return cachedCtx
     }
-    console.log('~ currentDirectory()', currentDirectory())
 
     try {
       const flags: Partial<graphqlCodegenCli.YamlCliFlags> = {
-        config: path.join(currentDirectory(), 'codegen.yml'),
+        config: path.join(firstWorkspaceDirectory(), 'codegen.yml'),
       }
       cachedCtx = await cli.createContext(flags as YamlCliFlags)
-      console.log('cached ctx', cachedCtx)
+      // console.log('cached ctx', cachedCtx)
 
-      cachedCtx.cwd = currentDirectory()
+      cachedCtx.cwd = firstWorkspaceDirectory()
       // @ts-expect-error
       const { config } = cachedCtx
       if (config.schema) {
-        // typically on a config for a single codegen artefact
+        // typically on a config for a single codegen artefact0
         // @ts-expect-error
         config.schema = makePathsAbsolute(cachedCtx.config.schema)
       }
@@ -68,6 +67,13 @@ export function activate(context: vscode.ExtensionContext) {
           const codegenGenerate = generates[codegenGenerateOutput]
 
           codegenGenerate.schema = makePathsAbsolute(codegenGenerate.schema)
+          if (
+            codegenGenerate.preset &&
+            codegenGenerate.preset.includes('near-operation-file') &&
+            !codegenGenerate.presetConfig.cwd
+          ) {
+            codegenGenerate.presetConfig.cwd = firstWorkspaceDirectory()
+          }
         }
       }
       return cachedCtx
@@ -79,7 +85,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   vscode.workspace.onDidSaveTextDocument(
     async (document: vscode.TextDocument) => {
-      console.log('document.fileName', document.fileName)
+      // console.log('document.fileName', document.fileName)
 
       if (
         (cli && document.fileName.endsWith('graphql')) ||
@@ -88,7 +94,6 @@ export function activate(context: vscode.ExtensionContext) {
         const ctx = await getCodegenContextForVSCode(document.fileName)
 
         // @ts-expect-error
-
         const generates = ctx.config.generates
         // @ts-expect-error
         if (ctx.config.schema) {
@@ -99,16 +104,11 @@ export function activate(context: vscode.ExtensionContext) {
             const codegenGenerate = generates[codegenGenerateOutput]
 
             const matches = multimatch(
-              document.fileName.replace(`${currentDirectory()}/`, ''),
+              document.fileName.replace(`${firstWorkspaceDirectory()}/`, ''),
               // @ts-expect-error
               originalGenerates[codegenGenerateOutput].documents
             )
-            console.log(
-              '~ matches',
-              matches,
-              document.fileName.replace(currentDirectory(), ''),
-              codegenGenerate.documents
-            )
+
             if (matches.length === 0) {
               // this file does not match the glob. This will not generate so we can omit this
               codegenGenerate.documents = []
