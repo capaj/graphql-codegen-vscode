@@ -1,7 +1,8 @@
 {
-  "name": "graphql-codegen",
+  "name": "graphql-codegen-vscode",
   "displayName": "graphql-codegen",
-  "description": "integrates graphql codegen into vscode",
+  "description": "integrates graphql-codegen into vscode, running it every time your query/mutation is saved",
+  "icon": "gql-codegen-cover.png",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.55.0"
