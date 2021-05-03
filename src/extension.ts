@@ -59,14 +59,16 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       const generates = config.generates
-      if (generates && !config.schema) {
+      if (generates) {
         originalGenerates = cloneDeep(generates)
 
         // typically on a config for a codegen with multiple artifacts
         for (const codegenGenerateOutput of Object.keys(generates)) {
           const codegenGenerate = generates[codegenGenerateOutput]
 
-          codegenGenerate.schema = makePathsAbsolute(codegenGenerate.schema)
+          if (codegenGenerate.schema) {
+            codegenGenerate.schema = makePathsAbsolute(codegenGenerate.schema)
+          }
           if (
             codegenGenerate.preset &&
             codegenGenerate.preset.includes('near-operation-file') &&
