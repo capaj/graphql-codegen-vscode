@@ -28,9 +28,12 @@ const makePathOrPathArrayAbsolute = (
   return makePathAbsolute(fsPath)
 }
 
-export function activate(context: vscode.ExtensionContext) {
-  let cli: typeof graphqlCodegenCli
+let cli: typeof graphqlCodegenCli
 
+function getGQLCodegenCli() {
+  if (cli) {
+    return cli
+  }
   try {
     cli = require(path.join(
       firstWorkspaceDirectory(),
@@ -39,11 +42,13 @@ export function activate(context: vscode.ExtensionContext) {
   } catch (err) {
     // ignore-we only want to run if @graphql-codegen/cli is installed in node modules
   }
+}
 
+export function activate(context: vscode.ExtensionContext) {
   let cachedCtx: graphqlCodegenCli.CodegenContext | null = null
   let originalGenerates: object | null = null
 
-  const getCodegenContextForVSCode = async (fileName?: string) => {
+  const getCodegenContextForVSCode = async () => {
     if (cachedCtx) {
       return cachedCtx
     }
@@ -105,10 +110,14 @@ export function activate(context: vscode.ExtensionContext) {
       // console.log('document.fileName', document.fileName)
 
       if (
-        (cli && document.fileName.endsWith('graphql')) ||
+        document.fileName.endsWith('graphql') ||
         document.fileName.endsWith('gql')
       ) {
-        const ctx = await getCodegenContextForVSCode(document.fileName)
+        getGQLCodegenCli() // require the package lazily as late as possible-makes it possible to install the deps and get the generation working right away
+        if (!cli) {
+          return
+        }
+        const ctx = await getCodegenContextForVSCode()
 
         // @ts-expect-error
         const generates = ctx.config.generates
@@ -147,7 +156,11 @@ export function activate(context: vscode.ExtensionContext) {
   let disposable = vscode.commands.registerCommand(
     'graphql-codegen.generateGqlCodegen',
     async () => {
+      getGQLCodegenCli()
       if (!cli) {
+        vscode.window.showWarningMessage(
+          `could not find '/node_modules/@graphql-codegen/cli'`
+        )
         return
       }
       const ctx = await getCodegenContextForVSCode()
@@ -168,11 +181,3 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {}
-
-const makePluginLoader = (from: string) => {
-  console.log('~ from', from)
-
-  return (mod: string) => {
-    return {}
-  }
-}
