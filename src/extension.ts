@@ -53,7 +53,6 @@ export function activate(context: vscode.ExtensionContext) {
         config: path.join(firstWorkspaceDirectory(), 'codegen.yml'),
       }
       cachedCtx = await cli.createContext(flags as YamlCliFlags)
-      // console.log('cached ctx', cachedCtx)
 
       cachedCtx.cwd = firstWorkspaceDirectory()
       // @ts-expect-error
@@ -84,6 +83,7 @@ export function activate(context: vscode.ExtensionContext) {
           ) {
             codegenGenerate.presetConfig.cwd = firstWorkspaceDirectory()
           }
+          codegenGenerate.originalOutputPath = codegenGenerateOutput
           // @ts-expect-error
           generatesWithAllAbsolutePaths[
             makePathAbsolute(codegenGenerateOutput) // this is only needed for windows. Not sure why, but it works fine on linux even when these paths are relative
@@ -91,6 +91,8 @@ export function activate(context: vscode.ExtensionContext) {
         }
         config.generates = generatesWithAllAbsolutePaths
       }
+      // console.log('cached ctx', cachedCtx)
+
       return cachedCtx
     } catch (err) {
       console.error(err)
@@ -121,7 +123,7 @@ export function activate(context: vscode.ExtensionContext) {
             const matches = multimatch(
               document.fileName.replace(`${firstWorkspaceDirectory()}/`, ''),
               // @ts-expect-error
-              originalGenerates[codegenGenerateOutput].documents
+              originalGenerates[codegenGenerate.originalOutputPath].documents
             )
 
             if (matches.length === 0) {
