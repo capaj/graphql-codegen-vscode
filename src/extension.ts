@@ -12,14 +12,20 @@ import { YamlCliFlags } from '@graphql-codegen/cli'
 export const firstWorkspaceDirectory = () =>
   vscode.workspace.workspaceFolders![0].uri.fsPath
 
-const makePathsAbsolute = (fsPath: string | string[]): any => {
-  if (Array.isArray(fsPath)) {
-    return fsPath.map(makePathsAbsolute)
-  }
+const makePathAbsolute = (fsPath: string): string => {
   if (path.isAbsolute(fsPath)) {
     return fsPath
   }
   return path.join(firstWorkspaceDirectory(), fsPath)
+}
+
+const makePathOrPathArrayAbsolute = (
+  fsPath: string | string[]
+): string | string[] => {
+  if (Array.isArray(fsPath)) {
+    return fsPath.map(makePathOrPathArrayAbsolute) as string[]
+  }
+  return makePathAbsolute(fsPath)
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -55,19 +61,21 @@ export function activate(context: vscode.ExtensionContext) {
       if (config.schema) {
         // typically on a config for a single codegen artefact0
         // @ts-expect-error
-        config.schema = makePathsAbsolute(cachedCtx.config.schema)
+        config.schema = makePathOrPathArrayAbsolute(cachedCtx.config.schema)
       }
 
       const generates = config.generates
       if (generates) {
         originalGenerates = cloneDeep(generates)
-
+        const generatesWithAllAbsolutePaths = {}
         // typically on a config for a codegen with multiple artifacts
         for (const codegenGenerateOutput of Object.keys(generates)) {
           const codegenGenerate = generates[codegenGenerateOutput]
 
           if (codegenGenerate.schema) {
-            codegenGenerate.schema = makePathsAbsolute(codegenGenerate.schema)
+            codegenGenerate.schema = makePathOrPathArrayAbsolute(
+              codegenGenerate.schema
+            )
           }
           if (
             codegenGenerate.preset &&
@@ -76,7 +84,12 @@ export function activate(context: vscode.ExtensionContext) {
           ) {
             codegenGenerate.presetConfig.cwd = firstWorkspaceDirectory()
           }
+          // @ts-expect-error
+          generatesWithAllAbsolutePaths[
+            makePathAbsolute(codegenGenerateOutput) // this is only needed for windows. Not sure why, but it works fine on linux even when these paths are relative
+          ] = codegenGenerate
         }
+        config.generates = generatesWithAllAbsolutePaths
       }
       return cachedCtx
     } catch (err) {
@@ -137,7 +150,10 @@ export function activate(context: vscode.ExtensionContext) {
       }
       const ctx = await getCodegenContextForVSCode()
       // @ts-expect-error
-      ctx.config.documents = makePathsAbsolute(cachedCtx.config.documents)
+      ctx.config.documents = makePathOrPathArrayAbsolute(
+        // @ts-expect-error
+        cachedCtx?.config.documents
+      )
       await cli.generate(ctx)
 
       vscode.window.showInformationMessage(
