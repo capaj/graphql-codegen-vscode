@@ -12,19 +12,28 @@ import { YamlCliFlags } from '@graphql-codegen/cli'
 export const firstWorkspaceDirectory = () =>
   vscode.workspace.workspaceFolders![0].uri.fsPath
 
-const makePathsAbsolute = (fsPath: string | string[]): any => {
-  if (Array.isArray(fsPath)) {
-    return fsPath.map(makePathsAbsolute)
-  }
+const makePathAbsolute = (fsPath: string): string => {
   if (path.isAbsolute(fsPath)) {
     return fsPath
   }
   return path.join(firstWorkspaceDirectory(), fsPath)
 }
 
-export function activate(context: vscode.ExtensionContext) {
-  let cli: typeof graphqlCodegenCli
+const makePathOrPathArrayAbsolute = (
+  fsPath: string | string[]
+): string | string[] => {
+  if (Array.isArray(fsPath)) {
+    return fsPath.map(makePathOrPathArrayAbsolute) as string[]
+  }
+  return makePathAbsolute(fsPath)
+}
 
+let cli: typeof graphqlCodegenCli
+
+function getGQLCodegenCli() {
+  if (cli) {
+    return cli
+  }
   try {
     cli = require(path.join(
       firstWorkspaceDirectory(),
@@ -33,11 +42,13 @@ export function activate(context: vscode.ExtensionContext) {
   } catch (err) {
     // ignore-we only want to run if @graphql-codegen/cli is installed in node modules
   }
+}
 
+export function activate(context: vscode.ExtensionContext) {
   let cachedCtx: graphqlCodegenCli.CodegenContext | null = null
   let originalGenerates: object | null = null
 
-  const getCodegenContextForVSCode = async (fileName?: string) => {
+  const getCodegenContextForVSCode = async () => {
     if (cachedCtx) {
       return cachedCtx
     }
@@ -47,7 +58,6 @@ export function activate(context: vscode.ExtensionContext) {
         config: path.join(firstWorkspaceDirectory(), 'codegen.yml'),
       }
       cachedCtx = await cli.createContext(flags as YamlCliFlags)
-      // console.log('cached ctx', cachedCtx)
 
       cachedCtx.cwd = firstWorkspaceDirectory()
       // @ts-expect-error
@@ -55,19 +65,21 @@ export function activate(context: vscode.ExtensionContext) {
       if (config.schema) {
         // typically on a config for a single codegen artefact0
         // @ts-expect-error
-        config.schema = makePathsAbsolute(cachedCtx.config.schema)
+        config.schema = makePathOrPathArrayAbsolute(cachedCtx.config.schema)
       }
 
       const generates = config.generates
       if (generates) {
         originalGenerates = cloneDeep(generates)
-
+        const generatesWithAllAbsolutePaths = {}
         // typically on a config for a codegen with multiple artifacts
         for (const codegenGenerateOutput of Object.keys(generates)) {
           const codegenGenerate = generates[codegenGenerateOutput]
 
           if (codegenGenerate.schema) {
-            codegenGenerate.schema = makePathsAbsolute(codegenGenerate.schema)
+            codegenGenerate.schema = makePathOrPathArrayAbsolute(
+              codegenGenerate.schema
+            )
           }
           if (
             codegenGenerate.preset &&
@@ -76,8 +88,16 @@ export function activate(context: vscode.ExtensionContext) {
           ) {
             codegenGenerate.presetConfig.cwd = firstWorkspaceDirectory()
           }
+          codegenGenerate.originalOutputPath = codegenGenerateOutput
+          // @ts-expect-error
+          generatesWithAllAbsolutePaths[
+            makePathAbsolute(codegenGenerateOutput) // this is only needed for windows. Not sure why, but it works fine on linux even when these paths are relative
+          ] = codegenGenerate
         }
+        config.generates = generatesWithAllAbsolutePaths
       }
+      // console.log('cached ctx', cachedCtx)
+
       return cachedCtx
     } catch (err) {
       console.error(err)
@@ -90,10 +110,14 @@ export function activate(context: vscode.ExtensionContext) {
       // console.log('document.fileName', document.fileName)
 
       if (
-        (cli && document.fileName.endsWith('graphql')) ||
+        document.fileName.endsWith('graphql') ||
         document.fileName.endsWith('gql')
       ) {
-        const ctx = await getCodegenContextForVSCode(document.fileName)
+        getGQLCodegenCli() // require the package lazily as late as possible-makes it possible to install the deps and get the generation working right away
+        if (!cli) {
+          return
+        }
+        const ctx = await getCodegenContextForVSCode()
 
         // @ts-expect-error
         const generates = ctx.config.generates
@@ -108,7 +132,7 @@ export function activate(context: vscode.ExtensionContext) {
             const matches = multimatch(
               document.fileName.replace(`${firstWorkspaceDirectory()}/`, ''),
               // @ts-expect-error
-              originalGenerates[codegenGenerateOutput].documents
+              originalGenerates[codegenGenerate.originalOutputPath].documents
             )
 
             if (matches.length === 0) {
@@ -132,12 +156,19 @@ export function activate(context: vscode.ExtensionContext) {
   let disposable = vscode.commands.registerCommand(
     'graphql-codegen.generateGqlCodegen',
     async () => {
+      getGQLCodegenCli()
       if (!cli) {
+        vscode.window.showWarningMessage(
+          `could not find '/node_modules/@graphql-codegen/cli'`
+        )
         return
       }
       const ctx = await getCodegenContextForVSCode()
       // @ts-expect-error
-      ctx.config.documents = makePathsAbsolute(cachedCtx.config.documents)
+      ctx.config.documents = makePathOrPathArrayAbsolute(
+        // @ts-expect-error
+        cachedCtx?.config.documents
+      )
       await cli.generate(ctx)
 
       vscode.window.showInformationMessage(
@@ -150,11 +181,3 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {}
-
-const makePluginLoader = (from: string) => {
-  console.log('~ from', from)
-
-  return (mod: string) => {
-    return {}
-  }
-}
