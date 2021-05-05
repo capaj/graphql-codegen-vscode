@@ -8,10 +8,10 @@ Keep in mind it will only run when your node_modules contain `@graphql-codegen/c
 This extension uses codegen from your node_moodules inside the folder you are working on, so you will never get a mismatching output to what your CLI would give you. Also it is faster. VilvaAthibanPB's always executes all of the codegens.
 This extensions only executes codegens that match the last saved file.
 
-### Known issues
+### OS support
 
-On windows generated paths are broken for near-operation-preset.
+Tested on Windows and Linux for now.
 
 ### Contributing
 
-Testing is done manually for now.
+Testing is done manually until some basic specs are added.
