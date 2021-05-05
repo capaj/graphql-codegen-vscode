@@ -19,4 +19,4 @@ Testing is done manually until some basic specs are added.
 ## CLI Version support
 
 Extension is tested with @graphql-codegen/cli version 1.21.x.
-Other versions might not work as expected. If you see any
+Other versions might not work as expected. If you hit any problems with other versions, please report them. The aim is to support as broad range of CLI versions as possible.
