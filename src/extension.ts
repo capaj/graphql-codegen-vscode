@@ -13,7 +13,7 @@ export const firstWorkspaceDirectory = () =>
   vscode.workspace.workspaceFolders![0].uri.fsPath
 
 const makePathAbsolute = (fsPath: string): string => {
-  if (path.isAbsolute(fsPath)) {
+  if (path.isAbsolute(fsPath) || fsPath.startsWith('http')) {
     return fsPath
   }
   return path.join(firstWorkspaceDirectory(), fsPath)
