@@ -144,10 +144,7 @@ export function activate(context: vscode.ExtensionContext) {
           }
         }
 
-        await cli.generate(ctx)
-        vscode.window.showInformationMessage(
-          `codegen ${document.fileName} done!`
-        )
+        await runCliGenerateWithUINotifications(ctx, document.fileName)
       }
       // const customConfig = customExtensionConfig()
     }
@@ -169,15 +166,28 @@ export function activate(context: vscode.ExtensionContext) {
         // @ts-expect-error
         cachedCtx?.config.documents
       )
-      await cli.generate(ctx)
-
-      vscode.window.showInformationMessage(
-        // @ts-expect-error
-        `codegen ${ctx.config.documents} done!`
-      )
+      //@ts-expect-error
+      await runCliGenerateWithUINotifications(ctx, ctx.config.documents)
     }
   )
   context.subscriptions.push(disposable)
+}
+
+async function runCliGenerateWithUINotifications(
+  ctx: graphqlCodegenCli.CodegenContext,
+  file: string
+) {
+  try {
+    await cli.generate(ctx)
+
+    vscode.window.showInformationMessage(`codegen ${file} done!`)
+  } catch (err) {
+    vscode.window.showErrorMessage(
+      `Codegen threw ${err.errors.length} ${
+        err.errors.length === 1 ? 'error' : 'errors'
+      }, first one: ${err.errors[0].message}`
+    )
+  }
 }
 
 export function deactivate() {}
