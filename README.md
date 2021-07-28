@@ -20,3 +20,10 @@ Testing is done manually until some basic specs are added.
 
 Extension is tested with @graphql-codegen/cli version 1.21.x.
 Other versions might not work as expected. If you hit any problems with other versions, please report them. The aim is to support as broad range of CLI versions as possible.
+
+## FAQ
+
+### Command output
+Since this runs the codegen behind the scenes you cannot see the output. You get notified of success/error with a vscode information message like this:
+
+![image](https://user-images.githubusercontent.com/1305378/127301219-830602e3-b77b-4723-a69a-45e73121c334.png)
