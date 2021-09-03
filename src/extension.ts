@@ -28,20 +28,30 @@ const makePathOrPathArrayAbsolute = (
   return makePathAbsolute(fsPath)
 }
 
-const PLUGIN_SETTINGS_ID = "graphql-codegen";
-const FILE_EXTENSIONS_WITH_DOCUMENTS_KEY = "fileExtensionsDeclaringGraphQLDocuments";
-const FILE_PATH_TO_WATCH_KEY = "filePathToWatch";
+const PLUGIN_SETTINGS_ID = 'graphql-codegen'
+const FILE_EXTENSIONS_WITH_DOCUMENTS_KEY =
+  'fileExtensionsDeclaringGraphQLDocuments'
+const FILE_PATH_TO_WATCH_KEY = 'filePathToWatch'
 
 function shouldRunGQLCodegenOnFile(filePath: string): boolean {
-  const configuration = vscode.workspace.getConfiguration(PLUGIN_SETTINGS_ID);
-  
-  const fileExtensionsContainingGraphQLDocuments = configuration.get<string[]>(FILE_EXTENSIONS_WITH_DOCUMENTS_KEY, ["graphql", "gql"]);
-  const filePathToWatch = configuration.get<string | null>(FILE_PATH_TO_WATCH_KEY, null);
+  const configuration = vscode.workspace.getConfiguration(PLUGIN_SETTINGS_ID)
 
-  const fileMatchesExtensions = fileExtensionsContainingGraphQLDocuments.some(ext => filePath.endsWith(ext));
-  const fileInPathToWatch = filePathToWatch == null || multimatch(file, filePathToWatch).length > 0
-  
-  return fileMatchesExtensions && fileInPathToWatch;
+  const fileExtensionsContainingGraphQLDocuments = configuration.get<string[]>(
+    FILE_EXTENSIONS_WITH_DOCUMENTS_KEY,
+    ['graphql', 'gql']
+  )
+  const filePathToWatch = configuration.get<string | null>(
+    FILE_PATH_TO_WATCH_KEY,
+    null
+  )
+
+  const fileMatchesExtensions = fileExtensionsContainingGraphQLDocuments.some(
+    (ext) => filePath.endsWith(ext)
+  )
+  const fileInPathToWatch =
+    filePathToWatch == null || multimatch(filePath, filePathToWatch).length > 0
+
+  return fileMatchesExtensions && fileInPathToWatch
 }
 
 let cli: typeof graphqlCodegenCli
@@ -59,7 +69,6 @@ function getGQLCodegenCli() {
     // ignore-we only want to run if @graphql-codegen/cli is installed in node modules
   }
 }
-
 
 export function activate(context: vscode.ExtensionContext) {
   let cachedCtx: graphqlCodegenCli.CodegenContext | null = null
@@ -121,7 +130,7 @@ export function activate(context: vscode.ExtensionContext) {
       throw err
     }
   }
-  
+
   vscode.workspace.onDidSaveTextDocument(
     async (document: vscode.TextDocument) => {
       if (shouldRunGQLCodegenOnFile(document.fileName)) {
