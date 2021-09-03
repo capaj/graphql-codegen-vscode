@@ -50,6 +50,7 @@
   },
   "scripts": {
     "vscode:prepublish": "tsc -p ./ --skipLibCheck",
+    "pub": "vsce publish",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "test-compile": "tsc -p ./",
