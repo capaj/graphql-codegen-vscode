@@ -28,6 +28,22 @@ const makePathOrPathArrayAbsolute = (
   return makePathAbsolute(fsPath)
 }
 
+const PLUGIN_SETTINGS_ID = "graphql-codegen";
+const FILE_EXTENSIONS_WITH_DOCUMENTS_KEY = "fileExtensionsDeclaringGraphQLDocuments";
+const FILE_PATH_TO_WATCH_KEY = "filePathToWatch";
+
+function shouldRunGQLCodegenOnFile(filePath: string): boolean {
+  const configuration = vscode.workspace.getConfiguration(PLUGIN_SETTINGS_ID);
+  
+  const fileExtensionsContainingGraphQLDocuments = configuration.get<string[]>(FILE_EXTENSIONS_WITH_DOCUMENTS_KEY, ["graphql", "gql"]);
+  const filePathToWatch = configuration.get<string | null>(FILE_PATH_TO_WATCH_KEY, null);
+
+  const fileMatchesExtensions = fileExtensionsContainingGraphQLDocuments.some(ext => filePath.endsWith(ext));
+  const fileInPathToWatch = filePathToWatch == null || multimatch(file, filePathToWatch).length > 0
+  
+  return fileMatchesExtensions && fileInPathToWatch;
+}
+
 let cli: typeof graphqlCodegenCli
 
 function getGQLCodegenCli() {
@@ -43,6 +59,7 @@ function getGQLCodegenCli() {
     // ignore-we only want to run if @graphql-codegen/cli is installed in node modules
   }
 }
+
 
 export function activate(context: vscode.ExtensionContext) {
   let cachedCtx: graphqlCodegenCli.CodegenContext | null = null
@@ -104,15 +121,10 @@ export function activate(context: vscode.ExtensionContext) {
       throw err
     }
   }
-
+  
   vscode.workspace.onDidSaveTextDocument(
     async (document: vscode.TextDocument) => {
-      // console.log('document.fileName', document.fileName)
-
-      if (
-        document.fileName.endsWith('graphql') ||
-        document.fileName.endsWith('gql')
-      ) {
+      if (shouldRunGQLCodegenOnFile(document.fileName)) {
         getGQLCodegenCli() // require the package lazily as late as possible-makes it possible to install the deps and get the generation working right away
         if (!cli) {
           return
