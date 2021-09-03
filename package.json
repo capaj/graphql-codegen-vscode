@@ -8,9 +8,9 @@
   },
   "description": "integrates graphql-codegen into vscode, running it every time your query/mutation is saved",
   "icon": "gql-codegen-cover.png",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "engines": {
-    "vscode": "^1.56.0"
+    "vscode": "^1.58.1"
   },
   "categories": [
     "Other"
@@ -31,11 +31,17 @@
       "properties": {
         "graphql-codegen.fileExtensionsDeclaringGraphQLDocuments": {
           "type": "[string]",
-          "default": ["graphql", "gql"],
+          "default": [
+            "graphql",
+            "gql"
+          ],
           "description": "GraphQL Codegen will automatically re-run codegen when files matching these file extensions are saved."
         },
         "graphql-codegen.filePathToWatch": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "default": null,
           "markdownDescription": "If specified, GraphQL Codegen will only re-run codegen if the files match the specified glob path. Uses [minimatch](https://github.com/isaacs/minimatch) glob syntax."
         }
@@ -56,18 +62,18 @@
     "@types/glob": "^7.1.4",
     "@types/lodash.clonedeep": "^4.5.6",
     "@types/mocha": "^9.0.0",
-    "@types/node": "^16.4.5",
-    "@types/vscode": "^1.58.1",
-    "@typescript-eslint/eslint-plugin": "^4.28.5",
-    "@typescript-eslint/parser": "^4.28.5",
-    "eslint": "^7.31.0",
+    "@types/node": "^16.7.10",
+    "@types/vscode": "^1.60.0",
+    "@typescript-eslint/eslint-plugin": "^4.30.0",
+    "@typescript-eslint/parser": "^4.30.0",
+    "eslint": "^7.32.0",
     "glob": "^7.1.7",
-    "husky": "^7.0.1",
-    "mocha": "^9.0.3",
+    "husky": "^7.0.2",
+    "mocha": "^9.1.1",
     "prettier": "^2.3.2",
     "pretty-quick": "^3.1.1",
-    "ts-loader": "^9.2.4",
-    "typescript": "^4.3.5",
+    "ts-loader": "^9.2.5",
+    "typescript": "^4.4.2",
     "vscode-test": "^1.6.1"
   },
   "husky": {
@@ -76,8 +82,8 @@
     }
   },
   "dependencies": {
-    "@graphql-codegen/cli": "^1.21.7",
-    "graphql": "^15.5.1",
+    "@graphql-codegen/cli": "^2.1.1",
+    "graphql": "^15.5.2",
     "lodash.clonedeep": "^4.5.0",
     "multimatch": "^5.0.0"
   }
