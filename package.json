@@ -33,7 +33,7 @@
           "type": "[string]",
           "default": ["graphql", "gql"],
           "description": "GraphQL Codegen will automatically re-run codegen when files matching these file extensions are saved."
-        }
+        },
         "graphql-codegen.filePathToListen": {
           "type": ["string", "null"],
           "default": null,
