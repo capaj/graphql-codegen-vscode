@@ -15,7 +15,7 @@ This extensions only executes codegens that match the last saved file.
 
 ### OS support
 
-Tested on Windows and Linux for now.
+Should support all major OSes.
 
 ### Contributing
 
