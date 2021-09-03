@@ -25,7 +25,22 @@
         "command": "graphql-codegen.generateGqlCodegen",
         "title": "Generate GQL codegen"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "GraphQL Codegen",
+      "properties": {
+        "graphql-codegen.fileExtensionsDeclaringGraphQLDocuments": {
+          "type": "[string]",
+          "default": ["graphql", "gql"],
+          "description": "GraphQL Codegen will automatically re-run codegen when files matching these file extensions are saved."
+        },
+        "graphql-codegen.filePathToWatch": {
+          "type": ["string", "null"],
+          "default": null,
+          "markdownDescription": "If specified, GraphQL Codegen will only re-run codegen if the files match the specified glob path. Uses [minimatch](https://github.com/isaacs/minimatch) glob syntax."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "tsc -p ./ --skipLibCheck",
