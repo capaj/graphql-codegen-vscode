@@ -5,10 +5,10 @@ import * as path from 'path'
 import multimatch from 'multimatch'
 import cloneDeep from 'lodash.clonedeep'
 import { YamlCliFlags } from '@graphql-codegen/cli'
+
 /**
  * Current workspace directory
  */
-
 export const firstWorkspaceDirectory = () =>
   vscode.workspace.workspaceFolders![0].uri.fsPath
 
@@ -19,13 +19,19 @@ const makePathAbsolute = (fsPath: string): string => {
   return path.join(firstWorkspaceDirectory(), fsPath)
 }
 
-const makePathOrPathArrayAbsolute = (
-  fsPath: string | string[]
-): string | string[] => {
-  if (Array.isArray(fsPath)) {
-    return fsPath.map(makePathOrPathArrayAbsolute) as string[]
+const makePathAbsoluteInSchema = (
+  schema: string | Record<string, any> | (string | Record<string, any>)[]
+): string | Record<string, any> | (string | Record<string, any>)[] => {
+  if (Array.isArray(schema)) {
+    return schema.map(makePathAbsoluteInSchema)
   }
-  return makePathAbsolute(fsPath)
+
+  if (typeof schema === 'string') {
+    return makePathAbsolute(schema)
+  }
+
+  const [path, configuration] = Object.entries(schema)[0]
+  return { [makePathAbsolute(path)]: configuration }
 }
 
 const PLUGIN_SETTINGS_ID = 'graphql-codegen'
@@ -90,8 +96,7 @@ export function activate(context: vscode.ExtensionContext) {
       const { config } = cachedCtx
       if (config.schema) {
         // typically on a config for a single codegen artefact0
-        // @ts-expect-error
-        config.schema = makePathOrPathArrayAbsolute(cachedCtx.config.schema)
+        config.schema = makePathAbsoluteInSchema(config.schema)
       }
 
       const generates = config.generates
@@ -103,7 +108,7 @@ export function activate(context: vscode.ExtensionContext) {
           const codegenGenerate = generates[codegenGenerateOutput]
 
           if (codegenGenerate.schema) {
-            codegenGenerate.schema = makePathOrPathArrayAbsolute(
+            codegenGenerate.schema = makePathAbsoluteInSchema(
               codegenGenerate.schema
             )
           }
