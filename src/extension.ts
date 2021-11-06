@@ -60,7 +60,7 @@ function shouldRunGQLCodegenOnFile(filePath: string): boolean {
   return fileMatchesExtensions && fileInPathToWatch
 }
 
-let cli: typeof graphqlCodegenCli
+let cli: typeof graphqlCodegenCli | null = null
 
 function getGQLCodegenCli() {
   if (cli) {
@@ -78,13 +78,19 @@ function getGQLCodegenCli() {
 
 export function activate(context: vscode.ExtensionContext) {
   let cachedCtx: graphqlCodegenCli.CodegenContext | null = null
-  let originalGenerates: object | null = null
+  let originalGenerates: Record<string, unknown> | null = null
 
   const getCodegenContextForVSCode = async () => {
     if (cachedCtx) {
       return cachedCtx
     }
 
+    if (!cli) {
+      vscode.window.showWarningMessage(
+        `could not find '/node_modules/@graphql-codegen/cli'`
+      )
+      return
+    }
     try {
       const flags: Partial<graphqlCodegenCli.YamlCliFlags> = {
         config: path.join(firstWorkspaceDirectory(), 'codegen.yml'),
@@ -140,11 +146,11 @@ export function activate(context: vscode.ExtensionContext) {
     async (document: vscode.TextDocument) => {
       if (shouldRunGQLCodegenOnFile(document.fileName)) {
         getGQLCodegenCli() // require the package lazily as late as possible-makes it possible to install the deps and get the generation working right away
-        if (!cli) {
+
+        const ctx = await getCodegenContextForVSCode()
+        if (!ctx) {
           return
         }
-        const ctx = await getCodegenContextForVSCode()
-
         // @ts-expect-error
         const generates = ctx.config.generates
         // @ts-expect-error
@@ -176,16 +182,11 @@ export function activate(context: vscode.ExtensionContext) {
     }
   )
 
-  let disposable = vscode.commands.registerCommand(
+  const disposable = vscode.commands.registerCommand(
     'graphql-codegen.generateGqlCodegen',
     async () => {
       getGQLCodegenCli()
-      if (!cli) {
-        vscode.window.showWarningMessage(
-          `could not find '/node_modules/@graphql-codegen/cli'`
-        )
-        return
-      }
+
       const ctx = await getCodegenContextForVSCode()
       // @ts-expect-error
       ctx.config.documents = makePathOrPathArrayAbsolute(
@@ -203,6 +204,12 @@ async function runCliGenerateWithUINotifications(
   ctx: graphqlCodegenCli.CodegenContext,
   file: string
 ) {
+  if (!cli) {
+    vscode.window.showWarningMessage(
+      `could not find '/node_modules/@graphql-codegen/cli'`
+    )
+    return
+  }
   try {
     await cli.generate(ctx)
 
@@ -216,4 +223,6 @@ async function runCliGenerateWithUINotifications(
   }
 }
 
-export function deactivate() {}
+export function deactivate() {
+  cli = null
+}
