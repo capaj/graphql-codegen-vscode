@@ -7,6 +7,7 @@ Keep in mind it will only run when your node_modules contains `@graphql-codegen/
 
 - `"graphql-codegen.fileExtensionsDeclaringGraphQLDocuments"`: change which file extensions are watched for saves. Defaults to `graphql` and `gql`. If you just use these files to define your mutations you don't need to configure anything.
 - `"graphql-codegen.filePathToWatch"`: allow users to specify a multimatch patters that file paths should match before running codegen. This is important as users could specify a more broad file (eg `ts`) that could exist in both paths relevant to graphql generation and paths that are not. Defaults to `null`, so watches everything.
+- `"graphql-codegen.configFilePath"`: allow users to specify a path to the codegen configuration file. Defaults to `codegen.yml`.
 
 ### How is it different than VilvaAthibanPB.graphql-codegen
 

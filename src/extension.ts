@@ -44,6 +44,7 @@ const PLUGIN_SETTINGS_ID = 'graphql-codegen'
 const FILE_EXTENSIONS_WITH_DOCUMENTS_KEY =
   'fileExtensionsDeclaringGraphQLDocuments'
 const FILE_PATH_TO_WATCH_KEY = 'filePathToWatch'
+const CONFIG_FILE_PATH = 'configFilePath'
 
 function shouldRunGQLCodegenOnFile(filePath: string): boolean {
   const configuration = vscode.workspace.getConfiguration(PLUGIN_SETTINGS_ID)
@@ -82,6 +83,24 @@ function getGQLCodegenCli() {
   }
 }
 
+const getConfigPath = async () => {
+  const configuration = vscode.workspace.getConfiguration(PLUGIN_SETTINGS_ID)
+  const userConfigPath = configuration.get<string | undefined>(
+    CONFIG_FILE_PATH,
+    undefined
+  )
+
+  if (userConfigPath) {
+    return makePathAbsolute(userConfigPath)
+  }
+
+  const foundConfigs = await globby(generateSearchPlaces('codegen'), {
+    cwd: firstWorkspaceDirectory()
+  })
+
+  return path.join(firstWorkspaceDirectory(), foundConfigs[0])
+}
+
 export function activate(context: vscode.ExtensionContext) {
   let cachedCtx: graphqlCodegenCli.CodegenContext | null = null
   let originalGenerates: Record<string, unknown> | null = null
@@ -98,23 +117,17 @@ export function activate(context: vscode.ExtensionContext) {
       return
     }
 
-    const foundConfigs = await globby(generateSearchPlaces('codegen'), {
-      cwd: firstWorkspaceDirectory()
-    })
-
-    if (foundConfigs.length === 0) {
-      return
-    }
-
     try {
+      const configFilePath = await getConfigPath()
+
       const flags: Partial<graphqlCodegenCli.YamlCliFlags> = {
-        config: path.join(firstWorkspaceDirectory(), foundConfigs[0])
+        config: configFilePath
       }
       cachedCtx = await cli.createContext(flags as YamlCliFlags)
 
       cachedCtx.cwd = firstWorkspaceDirectory()
-      // @ts-expect-error
-      const { config } = cachedCtx
+
+      const config = cachedCtx.getConfig()
       if (config.schema) {
         // typically on a config for a single codegen artefact0
         config.schema = makePathAbsoluteInSchema(config.schema)
@@ -123,7 +136,7 @@ export function activate(context: vscode.ExtensionContext) {
       const generates = config.generates
       if (generates) {
         originalGenerates = cloneDeep(generates)
-        const generatesWithAllAbsolutePaths = {}
+        const generatesWithAllAbsolutePaths: Record<string, any> = {}
         // typically on a config for a codegen with multiple artifacts
         for (const codegenGenerateOutput of Object.keys(generates)) {
           const codegenGenerate = generates[codegenGenerateOutput]
@@ -135,19 +148,26 @@ export function activate(context: vscode.ExtensionContext) {
           }
           if (
             codegenGenerate.preset &&
+            typeof codegenGenerate.preset === 'string' &&
             codegenGenerate.preset.includes('near-operation-file') &&
-            !codegenGenerate.presetConfig.cwd
+            !codegenGenerate.presetConfig?.cwd
           ) {
+            if (!codegenGenerate.presetConfig) {
+              codegenGenerate.presetConfig = {}
+            }
             codegenGenerate.presetConfig.cwd = firstWorkspaceDirectory()
           }
-          codegenGenerate.originalOutputPath = codegenGenerateOutput
           // @ts-expect-error
+          codegenGenerate.originalOutputPath = codegenGenerateOutput
           generatesWithAllAbsolutePaths[
             makePathAbsolute(codegenGenerateOutput) // this is only needed for windows. Not sure why, but it works fine on linux even when these paths are relative
           ] = codegenGenerate
         }
         config.generates = generatesWithAllAbsolutePaths
       }
+
+      cachedCtx.updateConfig(config)
+
       // console.log('cached ctx', cachedCtx)
 
       return cachedCtx
@@ -166,12 +186,11 @@ export function activate(context: vscode.ExtensionContext) {
         if (!ctx) {
           return
         }
-        // @ts-expect-error
-        const generates = ctx.config.generates
-        // @ts-expect-error
-        if (ctx.config.schema) {
-          // @ts-expect-error
-          ctx.config.documents = document.fileName
+
+        const config = ctx.getConfig()
+        const generates = config.generates
+        if (config.schema) {
+          config.documents = document.fileName
         } else {
           for (const codegenGenerateOutput of Object.keys(generates)) {
             const codegenGenerate = generates[codegenGenerateOutput]
@@ -191,6 +210,8 @@ export function activate(context: vscode.ExtensionContext) {
           }
         }
 
+        ctx.updateConfig(config)
+
         await runCliGenerateWithUINotifications(ctx, document.fileName)
       }
       // const customConfig = customExtensionConfig()
@@ -203,13 +224,18 @@ export function activate(context: vscode.ExtensionContext) {
       getGQLCodegenCli()
 
       const ctx = await getCodegenContextForVSCode()
+      if (!ctx) {
+        return
+      }
+
+      const config = ctx.getConfig()
       // @ts-expect-error
-      ctx.config.documents = makePathOrPathArrayAbsolute(
-        // @ts-expect-error
-        cachedCtx?.config.documents
-      )
+      config.documents = makePathOrPathArrayAbsolute(config.documents)
+
+      ctx.updateConfig(config)
+
       //@ts-expect-error
-      await runCliGenerateWithUINotifications(ctx, ctx.config.documents)
+      await runCliGenerateWithUINotifications(ctx, config.documents)
     }
   )
   context.subscriptions.push(disposable)
@@ -225,6 +251,7 @@ async function runCliGenerateWithUINotifications(
     )
     return
   }
+
   try {
     await cli.generate(ctx)
 
