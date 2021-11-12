@@ -230,11 +230,15 @@ async function runCliGenerateWithUINotifications(
 
     vscode.window.showInformationMessage(`codegen ${file} done!`)
   } catch (err) {
-    vscode.window.showErrorMessage(
-      `Codegen threw ${err.errors.length} ${
-        err.errors.length === 1 ? 'error' : 'errors'
-      }, first one: ${err.errors[0].message}`
-    )
+    if (err.errors?.length) {
+      vscode.window.showErrorMessage(
+        `Codegen threw ${err.errors.length} ${
+          err.errors.length === 1 ? 'error' : 'errors'
+        }, first one: ${err.errors[0].message}`
+      )
+    } else {
+      vscode.window.showErrorMessage(`Codegen threw error: ${err.message}`)
+    }
   }
 }
 
