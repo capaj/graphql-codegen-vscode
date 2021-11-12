@@ -8,14 +8,14 @@
   },
   "description": "integrates graphql-codegen into vscode, running it every time your query/mutation is saved",
   "icon": "gql-codegen-cover.png",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "engines": {
     "vscode": "^1.58.1"
   },
   "categories": [
     "Other"
   ],
-  "main": "./dist/extension.js",
+  "main": "./dist/graphql-codegen-vscode.js",
   "activationEvents": [
     "onLanguage:graphql",
     "onLanguage:GraphQL"
@@ -52,6 +52,7 @@
   "scripts": {
     "vscode:prepublish": "tsc -p ./ --skipLibCheck",
     "pub": "vsce publish",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/graphql-codegen-vscode.js --sourcemap --external:vscode --platform=node",
     "compile": "tsc -p ./",
     "ci-check": "tsc --noEmit",
     "watch": "tsc -watch -p ./",
@@ -69,6 +70,7 @@
     "@types/vscode": "^1.58.1",
     "@typescript-eslint/eslint-plugin": "^5.3.0",
     "@typescript-eslint/parser": "^5.3.0",
+    "esbuild": "^0.13.13",
     "eslint": "^8.2.0",
     "glob": "^7.2.0",
     "husky": "^7.0.4",
