@@ -8,7 +8,7 @@
   },
   "description": "integrates graphql-codegen into vscode, running it every time your query/mutation is saved",
   "icon": "gql-codegen-cover.png",
-  "version": "0.9.6",
+  "version": "0.9.7",
   "engines": {
     "vscode": "^1.58.1"
   },
