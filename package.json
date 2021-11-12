@@ -50,7 +50,7 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "tsc -p ./ --skipLibCheck",
+    "vscode:prepublish": "npm run build",
     "pub": "vsce publish",
     "build": "esbuild src/extension.ts --bundle --outfile=dist/graphql-codegen-vscode.js --sourcemap --external:vscode --platform=node",
     "compile": "tsc -p ./",
