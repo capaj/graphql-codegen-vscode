@@ -5,12 +5,18 @@ import * as path from 'path'
 import multimatch from 'multimatch'
 import cloneDeep from 'lodash.clonedeep'
 import { YamlCliFlags } from '@graphql-codegen/cli'
+import { generateSearchPlaces } from './generateSearchPlaces'
+import globby from 'globby'
 
 /**
  * Current workspace directory
  */
-export const firstWorkspaceDirectory = () =>
-  vscode.workspace.workspaceFolders![0].uri.fsPath
+export const firstWorkspaceDirectory = () => {
+  return (
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    vscode.workspace.workspaceFolders![0].uri.fsPath
+  )
+}
 
 const makePathAbsolute = (fsPath: string): string => {
   if (path.isAbsolute(fsPath) || fsPath.startsWith('http')) {
@@ -91,9 +97,18 @@ export function activate(context: vscode.ExtensionContext) {
       )
       return
     }
+
+    const foundConfigs = await globby(generateSearchPlaces('codegen'), {
+      cwd: firstWorkspaceDirectory()
+    })
+
+    if (foundConfigs.length === 0) {
+      return
+    }
+
     try {
       const flags: Partial<graphqlCodegenCli.YamlCliFlags> = {
-        config: path.join(firstWorkspaceDirectory(), 'codegen.yml'),
+        config: path.join(firstWorkspaceDirectory(), foundConfigs[0])
       }
       cachedCtx = await cli.createContext(flags as YamlCliFlags)
 
