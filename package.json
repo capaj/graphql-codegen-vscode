@@ -45,6 +45,14 @@
           ],
           "default": null,
           "markdownDescription": "If specified, GraphQL Codegen will only re-run codegen if the files match the specified glob path. Uses [minimatch](https://github.com/isaacs/minimatch) glob syntax."
+        },
+        "graphql-codegen.configFilePath": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "markdownDescription": "Path to the codegen configuration file"
         }
       }
     }
