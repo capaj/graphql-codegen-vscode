@@ -87,7 +87,7 @@
     }
   },
   "dependencies": {
-    "@graphql-codegen/cli": "^2.2.2",
+    "@graphql-codegen/cli": "^2.12.1",
     "globby": "^11.0.4",
     "graphql": "^15.7.2",
     "lodash.clonedeep": "^4.5.0",
