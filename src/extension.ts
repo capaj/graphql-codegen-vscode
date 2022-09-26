@@ -139,7 +139,7 @@ export function activate(context: vscode.ExtensionContext) {
         const generatesWithAllAbsolutePaths: Record<string, any> = {}
         // typically on a config for a codegen with multiple artifacts
         for (const codegenGenerateOutput of Object.keys(generates)) {
-          const codegenGenerate = generates[codegenGenerateOutput]
+          const codegenGenerate = generates[codegenGenerateOutput] as any // as Types.ConfiguredOutput
 
           if (codegenGenerate.schema) {
             codegenGenerate.schema = makePathAbsoluteInSchema(
@@ -157,7 +157,7 @@ export function activate(context: vscode.ExtensionContext) {
             }
             codegenGenerate.presetConfig.cwd = firstWorkspaceDirectory()
           }
-          // @ts-expect-error
+
           codegenGenerate.originalOutputPath = codegenGenerateOutput
           generatesWithAllAbsolutePaths[
             makePathAbsolute(codegenGenerateOutput) // this is only needed for windows. Not sure why, but it works fine on linux even when these paths are relative
@@ -193,7 +193,7 @@ export function activate(context: vscode.ExtensionContext) {
           config.documents = document.fileName
         } else {
           for (const codegenGenerateOutput of Object.keys(generates)) {
-            const codegenGenerate = generates[codegenGenerateOutput]
+            const codegenGenerate = generates[codegenGenerateOutput] as any // as Types.ConfiguredOutput
 
             const matches = multimatch(
               document.fileName.replace(`${firstWorkspaceDirectory()}/`, ''),
