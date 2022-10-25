@@ -31,7 +31,10 @@
       "title": "GraphQL Codegen",
       "properties": {
         "graphql-codegen.fileExtensionsDeclaringGraphQLDocuments": {
-          "type": "[string]",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
           "default": [
             "graphql",
             "gql"
