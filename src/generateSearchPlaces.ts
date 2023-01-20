@@ -7,5 +7,6 @@ export function generateSearchPlaces(moduleName: string) {
   const dot = extensions
     .filter((ext) => ext !== 'config.js')
     .map((ext) => `.${moduleName}rc.${ext}`)
-  return [...regular.concat(dot)]
+
+  return [...regular.concat(dot), 'package.json']
 }

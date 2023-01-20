@@ -25,6 +25,15 @@ const makePathAbsolute = (fsPath: string): string => {
   return path.join(firstWorkspaceDirectory(), fsPath)
 }
 
+const makePathOrPathArrayAbsolute = (
+  fsPath: string | string[]
+): string | string[] => {
+  if (Array.isArray(fsPath)) {
+    return fsPath.map(makePathOrPathArrayAbsolute) as string[]
+  }
+  return makePathAbsolute(fsPath)
+}
+
 const makePathAbsoluteInSchema = (
   schema: string | Record<string, any> | (string | Record<string, any>)[]
 ): string | Record<string, any> | (string | Record<string, any>)[] => {
@@ -128,6 +137,10 @@ export function activate(context: vscode.ExtensionContext) {
       cachedCtx.cwd = firstWorkspaceDirectory()
 
       const config = cachedCtx.getConfig()
+      if (!config) {
+        return
+      }
+
       if (config.schema) {
         // typically on a config for a single codegen artefact0
         config.schema = makePathAbsoluteInSchema(config.schema)
@@ -188,10 +201,14 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         const config = ctx.getConfig()
-        const generates = config.generates
+        if (!config) {
+          return
+        }
         if (config.schema) {
           config.documents = document.fileName
         } else {
+          const { generates } = config
+
           for (const codegenGenerateOutput of Object.keys(generates)) {
             const codegenGenerate = generates[codegenGenerateOutput] as any // as Types.ConfiguredOutput
 
@@ -229,13 +246,20 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       const config = ctx.getConfig()
-      // @ts-expect-error
-      config.documents = makePathOrPathArrayAbsolute(config.documents)
+      if (!config) {
+        vscode.window.showWarningMessage(
+          `could not find @graphql-codegen/cli config`
+        )
+        return
+      }
+
+      config.documents = makePathOrPathArrayAbsolute(
+        config.documents as string[]
+      )
 
       ctx.updateConfig(config)
 
-      //@ts-expect-error
-      await runCliGenerateWithUINotifications(ctx, config.documents)
+      await runCliGenerateWithUINotifications(ctx)
     }
   )
   context.subscriptions.push(disposable)
@@ -243,7 +267,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 async function runCliGenerateWithUINotifications(
   ctx: graphqlCodegenCli.CodegenContext,
-  file: string
+  file?: string
 ) {
   if (!cli) {
     vscode.window.showWarningMessage(
@@ -255,7 +279,9 @@ async function runCliGenerateWithUINotifications(
   try {
     await cli.generate(ctx)
 
-    vscode.window.showInformationMessage(`codegen ${file} done!`)
+    vscode.window.showInformationMessage(
+      `graphql codegen ${file ?? ''} successful!`
+    )
   } catch (err) {
     if (err.errors?.length) {
       vscode.window.showErrorMessage(
