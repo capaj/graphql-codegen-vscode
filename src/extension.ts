@@ -5,8 +5,9 @@ import * as path from 'path'
 import multimatch from 'multimatch'
 import cloneDeep from 'lodash.clonedeep'
 import { YamlCliFlags } from '@graphql-codegen/cli'
-import { generateSearchPlaces } from './generateSearchPlaces'
+
 import globby from 'globby'
+import { generateSearchPlaces } from './generateSearchPlaces'
 
 /**
  * Current workspace directory
@@ -87,6 +88,7 @@ function getGQLCodegenCli() {
       firstWorkspaceDirectory(),
       '/node_modules/@graphql-codegen/cli'
     ))
+    return cli
   } catch (err) {
     // ignore-we only want to run if @graphql-codegen/cli is installed in node modules
   }
@@ -110,6 +112,11 @@ const getConfigPath = async () => {
   return path.join(firstWorkspaceDirectory(), foundConfigs[0])
 }
 
+// TODO figure out why we're getting Activating extension 'GraphQL.vscode-graphql-execution' failed: Cannot find module 'graphql-config'
+// Require stack:
+// - /home/capaj/.vscode/extensions/graphql.vscode-graphql-execution-0.1.7/dist/providers/exec-content.js
+// - /home/capaj/.vscode/extensions/graphql.vscode-graphql-execution-0.1.7/dist/extension.js
+// it does not seem to affect anything, just annoying spam in the console, generation works fine
 export function activate(context: vscode.ExtensionContext) {
   let cachedCtx: graphqlCodegenCli.CodegenContext | null = null
   let originalGenerates: Record<string, unknown> | null = null

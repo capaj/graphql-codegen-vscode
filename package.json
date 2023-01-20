@@ -65,7 +65,7 @@
     "pub": "vsce publish",
     "build": "esbuild src/extension.ts --bundle --outfile=dist/graphql-codegen-vscode.js --sourcemap --external:vscode --platform=node",
     "compile": "tsc -p ./",
-    "ci-check": "tsc --noEmit",
+    "tsc": "tsc --noEmit",
     "watch": "tsc -watch -p ./",
     "test-compile": "tsc -p ./",
     "test-watch": "tsc -watch -p ./",
@@ -101,6 +101,7 @@
     "@graphql-codegen/cli": "^2.16.4",
     "globby": "^11.1.0",
     "graphql": "^15.8.0",
+    "graphql-config": "^4.4.0",
     "lodash.clonedeep": "^4.5.0",
     "multimatch": "^5.0.0"
   }
