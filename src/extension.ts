@@ -7,7 +7,6 @@ import cloneDeep from 'lodash.clonedeep'
 import { YamlCliFlags } from '@graphql-codegen/cli'
 
 import globby from 'globby'
-import { generateSearchPlaces } from './generateSearchPlaces'
 
 /**
  * Current workspace directory
@@ -105,7 +104,11 @@ const getConfigPath = async () => {
     return makePathAbsolute(userConfigPath)
   }
 
-  const foundConfigs = await globby(generateSearchPlaces('codegen'), {
+  if (cli == null) {
+    return; // cli should already be loaded here
+  }
+
+  const foundConfigs = await globby(cli.generateSearchPlaces('codegen'), {
     cwd: firstWorkspaceDirectory()
   })
 
