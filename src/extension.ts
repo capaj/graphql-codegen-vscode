@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as vscode from 'vscode'
 import * as graphqlCodegenCli from '@graphql-codegen/cli'
 
@@ -6,7 +7,7 @@ import multimatch from 'multimatch'
 import cloneDeep from 'lodash.clonedeep'
 import { YamlCliFlags } from '@graphql-codegen/cli'
 
-import globby from 'globby'
+import {globby} from 'globby'
 
 /**
  * Current workspace directory
