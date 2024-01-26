@@ -11,7 +11,7 @@ Keep in mind it will only run when your node_modules contains `@graphql-codegen/
 
 ### How is it different than VilvaAthibanPB.graphql-codegen
 
-This extension uses codegen from your node_modules inside the folder you are working on, so you will never get a mismatching output to what your CLI would give you. Also it is faster. VilvaAthibanPB's always executes all of the codegens.
+This extension uses codegen from your node_modules inside the folder you are working on, so you will never get a mismatching output to what your CLI would give you. Also it is faster-especially on large projects. VilvaAthibanPB's always executes all of the codegens.
 This extensions only executes codegens that match the last saved file.
 
 ### OS support
@@ -24,7 +24,7 @@ Testing is done manually until some basic specs are added.
 
 ## CLI Version support
 
-Extension is tested with @graphql-codegen/cli version 1.21.x.
+Extension was initially tested with @graphql-codegen/cli version 1.21.x. Last version is tested with version 5.0.0
 Other versions might not work as expected. If you hit any problems with other versions, please report them. The aim is to support as broad range of CLI versions as possible.
 
 ## FAQ
