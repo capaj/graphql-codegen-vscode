@@ -7,23 +7,20 @@ import multimatch from 'multimatch'
 import cloneDeep from 'lodash.clonedeep'
 import { YamlCliFlags } from '@graphql-codegen/cli'
 
-import {globby} from 'globby'
+import { globby } from 'globby'
 
-/**
- * Current workspace directory
- */
-export const firstWorkspaceDirectory = () => {
-  return (
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    vscode.workspace.workspaceFolders![0].uri.fsPath
-  )
-}
+let workspaceWithGraphqlCodegenCli: string | null = null
 
 const makePathAbsolute = (fsPath: string): string => {
   if (path.isAbsolute(fsPath) || fsPath.startsWith('http')) {
     return fsPath
   }
-  return path.join(firstWorkspaceDirectory(), fsPath)
+  if (!workspaceWithGraphqlCodegenCli) {
+    throw new Error(
+      'workspaceWithGraphqlCodegenCli is not set. This should not happen, please report this as a bug.'
+    )
+  }
+  return path.join(workspaceWithGraphqlCodegenCli, fsPath)
 }
 
 const makePathOrPathArrayAbsolute = (
@@ -79,18 +76,23 @@ function shouldRunGQLCodegenOnFile(filePath: string): boolean {
 
 let cli: typeof graphqlCodegenCli | null = null
 
-function getGQLCodegenCli() {
+function requireGQLCodegenCli() {
   if (cli) {
     return cli
   }
-  try {
-    cli = require(path.join(
-      firstWorkspaceDirectory(),
-      '/node_modules/@graphql-codegen/cli'
-    ))
-    return cli
-  } catch (err) {
-    // ignore-we only want to run if @graphql-codegen/cli is installed in node modules
+  if (vscode.workspace.workspaceFolders === undefined) {
+    return
+  }
+  for (const dir of vscode.workspace.workspaceFolders) {
+    try {
+      cli = require(
+        path.join(dir.uri.fsPath, '/node_modules/@graphql-codegen/cli')
+      )
+      workspaceWithGraphqlCodegenCli = dir.uri.fsPath
+      return cli
+    } catch (err) {
+      // ignore-we only want to run if @graphql-codegen/cli is installed in node modules
+    }
   }
 }
 
@@ -105,15 +107,17 @@ const getConfigPath = async () => {
     return makePathAbsolute(userConfigPath)
   }
 
-  if (cli == null) {
-    return; // cli should already be loaded here
+  if (cli == null || !workspaceWithGraphqlCodegenCli) {
+    throw new Error(
+      'cli is not set. This should not happen, please report this as a bug.'
+    )
   }
 
   const foundConfigs = await globby(cli.generateSearchPlaces('codegen'), {
-    cwd: firstWorkspaceDirectory()
+    cwd: workspaceWithGraphqlCodegenCli
   })
 
-  return path.join(firstWorkspaceDirectory(), foundConfigs[0])
+  return path.join(workspaceWithGraphqlCodegenCli, foundConfigs[0])
 }
 
 // TODO figure out why we're getting Activating extension 'GraphQL.vscode-graphql-execution' failed: Cannot find module 'graphql-config'
@@ -137,6 +141,13 @@ export function activate(context: vscode.ExtensionContext) {
       return
     }
 
+    if (!workspaceWithGraphqlCodegenCli) {
+      vscode.window.showWarningMessage(
+        `could not find workspace with graphql-codegen-cli`
+      )
+      return
+    }
+
     try {
       const configFilePath = await getConfigPath()
 
@@ -145,7 +156,7 @@ export function activate(context: vscode.ExtensionContext) {
       }
       cachedCtx = await cli.createContext(flags as YamlCliFlags)
 
-      cachedCtx.cwd = firstWorkspaceDirectory()
+      cachedCtx.cwd = workspaceWithGraphqlCodegenCli
 
       const config = cachedCtx.getConfig()
       if (!config) {
@@ -179,7 +190,7 @@ export function activate(context: vscode.ExtensionContext) {
             if (!codegenGenerate.presetConfig) {
               codegenGenerate.presetConfig = {}
             }
-            codegenGenerate.presetConfig.cwd = firstWorkspaceDirectory()
+            codegenGenerate.presetConfig.cwd = workspaceWithGraphqlCodegenCli
           }
 
           codegenGenerate.originalOutputPath = codegenGenerateOutput
@@ -204,7 +215,7 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.workspace.onDidSaveTextDocument(
     async (document: vscode.TextDocument) => {
       if (shouldRunGQLCodegenOnFile(document.fileName)) {
-        getGQLCodegenCli() // require the package lazily as late as possible-makes it possible to install the deps and get the generation working right away
+        requireGQLCodegenCli() // require the package lazily as late as possible-makes it possible to install the deps and get the generation working right away
 
         const ctx = await getCodegenContextForVSCode()
         if (!ctx) {
@@ -224,7 +235,10 @@ export function activate(context: vscode.ExtensionContext) {
             const codegenGenerate = generates[codegenGenerateOutput] as any // as Types.ConfiguredOutput
 
             const matches = multimatch(
-              document.fileName.replace(`${firstWorkspaceDirectory()}/`, ''),
+              document.fileName.replace(
+                `${workspaceWithGraphqlCodegenCli}/`,
+                ''
+              ),
               // @ts-expect-error
               originalGenerates[codegenGenerate.originalOutputPath].documents
             )
@@ -249,7 +263,7 @@ export function activate(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerCommand(
     'graphql-codegen.generateGqlCodegen',
     async () => {
-      getGQLCodegenCli()
+      requireGQLCodegenCli()
 
       const ctx = await getCodegenContextForVSCode()
       if (!ctx) {

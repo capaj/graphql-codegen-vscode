@@ -34,3 +34,8 @@ Other versions might not work as expected. If you hit any problems with other ve
 Since this runs the codegen behind the scenes you cannot see the output. You get notified of success/error with a vscode information message like this:
 
 ![image](https://user-images.githubusercontent.com/1305378/127301219-830602e3-b77b-4723-a69a-45e73121c334.png)
+
+### Multiple workspaces support
+
+You can have multiple workspaces in your editor, but keep in mind that we always iterate from the first to last and we run codegen inside the first workspace which has `/node_modules/@graphql-codegen/cli` module available.
+If you have multiple VSCode workspaces with this module, it might not work correctly.
