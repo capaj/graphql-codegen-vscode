@@ -1,3 +1,9 @@
+<!-- Graphql logo readme banner START -->
+<a href="https://the-guild.dev">
+  <img src="https://the-guild-org.github.io/press-kit/full-themed.svg" alt="Created by The guild" style="float: right; margin: 0 0 10px 10px;width: 100px;" align="right"/>
+</a>
+<!-- Graphql logo readme banner END -->
+
 # graphql-codegen-vscode
 
 Runs [@graphql-codegen](https://github.com/dotansimha/graphql-code-generator) generation as soon as you hit save on any `gql` or `graphql` file.
