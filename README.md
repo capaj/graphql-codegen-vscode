@@ -1,6 +1,6 @@
 <!-- Graphql logo readme banner START -->
 <a href="https://the-guild.dev">
-  <img src="https://the-guild-org.github.io/press-kit/full-themed.svg" alt="Created by The guild" style="float: right; margin: 0 0 10px 10px;width: 100px;" align="right"/>
+  <img src="https://the-guild-org.github.io/press-kit/full-dark-logo.png" alt="Created by The guild" style="float: right; margin: 0 0 10px 10px;width: 100px;" align="right"/>
 </a>
 <!-- Graphql logo readme banner END -->
 
